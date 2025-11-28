@@ -7,7 +7,7 @@ public class WalkingWay : MonoBehaviour
 
     private int _currentWeyPoint = 0;
 
-    void Update()
+    private void Update()
     {
         if (transform.position == _wayPoints[_currentWeyPoint].position)
         {

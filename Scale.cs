@@ -8,18 +8,27 @@ public class Scale : MonoBehaviour
 
     private bool _isIncrease = true;
 
-    void Update()
+    private void Update()
     {
         Vector3 objectScale = transform.localScale;
+
         if (_isIncrease)
         {
             transform.localScale = new Vector3(objectScale.x + (_speedScale * Time.deltaTime), objectScale.y + (_speedScale * Time.deltaTime), objectScale.z + (_speedScale * Time.deltaTime));
-            if (objectScale.x > _maxSize) _isIncrease = false;
+
+            if (objectScale.x > _maxSize)
+            {
+                _isIncrease = false;
+            }
         }
         else
         {
             transform.localScale = new Vector3(objectScale.x - (_speedScale * Time.deltaTime), objectScale.y - (_speedScale * Time.deltaTime), objectScale.z - (_speedScale * Time.deltaTime));
-            if (objectScale.x < _minSize) _isIncrease = true;
+
+            if (objectScale.x < _minSize)
+            {
+                _isIncrease = true;
+            }
         }
     }
 }
