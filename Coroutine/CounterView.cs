@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,11 +6,9 @@ public class CounterView : MonoBehaviour
     [SerializeField] private CoroutineCounter _counter;
     [SerializeField] private Text _counterText;
 
-    private Coroutine _coroutine;
-
     private void Start()
     {
-        _counterText.text = _counter.CurrentValue.ToString("F0");
+        _counterText.text = _counter.CurrentValue.ToString("F1");
     }
 
     private void OnEnable()
@@ -24,22 +21,10 @@ public class CounterView : MonoBehaviour
         _counter.ValueChanged -= OnValueChanged;
     }
 
-    public void Stop()
-    {
-        if (_coroutine != null)
-            StopCoroutine(_coroutine);
-    }
-
     private void OnValueChanged(float newValue)
     {
-        _coroutine = StartCoroutine(UpdateTextSmooth(newValue));
-    }
-
-    private IEnumerator UpdateTextSmooth(float targetValue)
-    {
-        _counterText.text = targetValue.ToString("F0");
-        Debug.Log($"Счетчик: {targetValue}");
-        yield return null;
+        _counterText.text = newValue.ToString("F1");
+        Debug.Log($"Счетчик: {newValue}");
     }
 }
 

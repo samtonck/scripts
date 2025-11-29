@@ -7,14 +7,13 @@ public class CoroutineCounter : MonoBehaviour
     private const float CountInterval = 0.5f;
     private const float Increment = 0.5f;
 
-    private float _currentValue = 0f;
     private Coroutine _countingCoroutine;
     private bool _isCounting = false;
 
     public event Action<float> ValueChanged;
 
-    public float CurrentValue => _currentValue;
-
+    public float CurrentValue { get; private set; }
+    
     public void ToggleCounting()
     {
         if (_isCounting)
@@ -53,8 +52,8 @@ public class CoroutineCounter : MonoBehaviour
         while (_isCounting)
         {
             yield return wait;
-            _currentValue += Increment;
-            ValueChanged?.Invoke(_currentValue);
+            CurrentValue += Increment;
+            ValueChanged?.Invoke(CurrentValue);
         }
     }
 
