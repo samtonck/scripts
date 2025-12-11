@@ -1,66 +1,71 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Explosion : MonoBehaviour
 {
-    [SerializeField] private float _explosionRadius = 100f;
-    [SerializeField] private float _explosionForce = 2500f;
-    [SerializeField] private float _scaleMultiplier = 2f;
+    [SerializeField] private float _explosionRadius = 10f;
+    [SerializeField] private float _explosionForce = 1000f;
+    [SerializeField] private float _explosionDelay = 0.1f;
 
-    public IEnumerator ExplodeAndScatterClones(float delay, List<GameObject> clones)
+    private void OnEnable()
     {
-        Vector3 explosionPosition = transform.position;
-        
-        yield return new WaitForSeconds(delay);
-        
-        Debug.Log($"Взрыв с делением! Раскидываем {clones.Count} клонов");
-        
-        foreach (GameObject clone in clones)
+        var handler = GetComponent<Handler>();
+        handler.OnExplode += HandleExplode;
+    }
+
+    private void OnDisable()
+    {
+        var handler = GetComponent<Handler>();
+        handler.OnExplode -= HandleExplode;
+    }
+
+    private void HandleExplode(GameObject cube)
+    {
+        Vector3 explosionCenter = cube.transform.position;
+        Destroy(cube);
+        StartCoroutine(ApplyExplosionToCubes(explosionCenter, FindCubesInRadius(explosionCenter)));
+    }
+
+    public System.Collections.IEnumerator ApplyExplosionToCubes(Vector3 explosionCenter, List<GameObject> cubes)
+    {   
+        yield return new WaitForSeconds(_explosionDelay);
+        foreach (GameObject cube in cubes)
         {
-            if (clone != null)
+            if (cube != null)
             {
-                Rigidbody cloneRigidbody = clone.GetComponent<Rigidbody>();
-                cloneRigidbody.AddExplosionForce(_explosionForce, explosionPosition, _explosionRadius);
+                ApplyForceToCube(explosionCenter, cube);
             }
         }
     }
 
-    public IEnumerator ExplodeArea(float delay)
+    private List<GameObject> FindCubesInRadius(Vector3 explosionCenter)
     {
-        Vector3 explosionPosition = transform.position;
-        float scale = transform.localScale.x;
-        
-        float scaledRadius = _explosionRadius / scale * _scaleMultiplier;
-        float scaledForce = _explosionForce / scale * _scaleMultiplier;
-        
-        yield return new WaitForSeconds(delay);
-        
-        List<Rigidbody> explodableObjects = GetExplodableObjects(explosionPosition, scaledRadius);
-        
-        Debug.Log($"Взрыв без деления! Scale: {scale:F2}, Радиус: {scaledRadius:F0}, Сила: {scaledForce:F0}, Объектов: {explodableObjects.Count}");
-        
-        foreach (Rigidbody explodableObject in explodableObjects)
+        List<GameObject> cubes = new List<GameObject>();
+        Collider[] colliders = Physics.OverlapSphere(explosionCenter, _explosionRadius);
+
+        foreach (Collider hit in colliders)
         {
-            explodableObject.AddExplosionForce(scaledForce, explosionPosition, scaledRadius);
+            if (hit.GetComponent<ExplosionData>() != null)
+                cubes.Add(hit.gameObject);
         }
+
+        return cubes;
     }
 
-    private List<Rigidbody> GetExplodableObjects(Vector3 explosionPosition, float radius)
+    private void ApplyForceToCube(Vector3 explosionCenter, GameObject cube)
     {
-        Collider[] hits = Physics.OverlapSphere(explosionPosition, radius);
+        Rigidbody rigidbody = cube.GetComponent<Rigidbody>();
+        Vector3 cubePosition = rigidbody.transform.position;
+        Vector3 direction = cubePosition - explosionCenter;
+        float distance = direction.magnitude;
 
-        List<Rigidbody> items = new List<Rigidbody>();
+        if (distance < Mathf.Epsilon) return;
 
-        foreach (Collider hit in hits)
-        {
-            if (hit.attachedRigidbody != null && hit.attachedRigidbody.gameObject != gameObject)
-            {
-                items.Add(hit.attachedRigidbody);
-            }
-        }
+        direction.Normalize();
 
-        return items;
+        float percentage = 1f - Mathf.Clamp01(distance / _explosionRadius);
+        float force = _explosionForce * percentage;
+
+        rigidbody.AddForce(direction * force, ForceMode.Impulse);
     }
 }
-
