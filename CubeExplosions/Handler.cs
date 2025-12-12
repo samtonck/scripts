@@ -1,17 +1,18 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Raycaster))]
+[RequireComponent(typeof(Raycaster), typeof(Spawner), typeof(Explosion))]
 public class Handler : MonoBehaviour
 {
     private Raycaster _raycaster;
-
-    public event Action<GameObject> SpawnClones;
-    public event Action<GameObject> Exploded;
+    private Spawner _spawner;
+    private Explosion _explosion;
 
     private void Awake()
     {
         _raycaster = GetComponent<Raycaster>();
+        _spawner = GetComponent<Spawner>();
+        _explosion = GetComponent<Explosion>();
     }
 
     private void OnEnable()
@@ -24,26 +25,25 @@ public class Handler : MonoBehaviour
         _raycaster.ObjectHit -= HandleClick;
     }
 
-    private bool CanDivide(float currentChance)
+    private bool CanClone(float currentChance)
     {
         float randomValue = UnityEngine.Random.Range(0f, 100f);
         return randomValue < currentChance;
     }
 
-    private void HandleClick(GameObject hitObject)
+    private void HandleClick(ExplosionObject explosionObject)
     {
-        if (!hitObject.TryGetComponent(out ExplosionData explosionData))
-            return;
-
-        if (CanDivide(explosionData.CurrentChance))
+        if (CanClone(explosionObject.CurrentChance))
         {
-            SpawnClones?.Invoke(hitObject);
-            Debug.Log($"Клонирование | шанс: {explosionData.CurrentChance}");
+            Vector3 originalPosition = explosionObject.transform.position;
+            List<ExplosionObject> spawnedObjects = _spawner.Spawn(explosionObject);
+            _explosion.ExplodeObjects(originalPosition, spawnedObjects);
+            Destroy(explosionObject.gameObject);
         }
         else
         {
-            Exploded?.Invoke(hitObject);
-            Debug.Log($"Взрыв | шанс: {explosionData.CurrentChance}");
+            _explosion.Explode(explosionObject);
+            Destroy(explosionObject.gameObject);
         }
     }
 }

@@ -1,49 +1,43 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Handler))]
 public class Explosion : MonoBehaviour
 {
     [SerializeField] private float _explosionRadius = 10f;
     [SerializeField] private float _explosionForce = 1000f;
 
-    private Handler _handler;
-
-    public event Action<GameObject> ObjectExploded;
-
-    private void Awake()
+    public void ExplodeObjects(Vector3 explosionCenter, List<ExplosionObject> objects)
     {
-        _handler = GetComponent<Handler>();
+        foreach (ExplosionObject explosionObject in objects)
+        {
+            ApplyForceToObject(explosionCenter, explosionObject);
+        }
     }
 
-    private void OnEnable()
+    public void Explode(ExplosionObject explosionObject)
     {
-        _handler.Exploded += HandleExplode;
+        Vector3 explosionCenter = explosionObject.transform.position;
+        List<ExplosionObject> objects = FindObjectsInRadius(explosionCenter);
+        ExplodeObjects(explosionCenter, objects);
     }
 
-    private void OnDisable()
+    private List<ExplosionObject> FindObjectsInRadius(Vector3 explosionCenter)
     {
-        _handler.Exploded -= HandleExplode;
-    }
-
-    private List<GameObject> FindObjectsInRadius(Vector3 explosionCenter)
-    {
-        List<GameObject> objects = new List<GameObject>();
+        List<ExplosionObject> objects = new List<ExplosionObject>();
         Collider[] colliders = Physics.OverlapSphere(explosionCenter, _explosionRadius);
 
         foreach (Collider hit in colliders)
         {
-            if (hit.TryGetComponent(out ExplosionData explosionData))
-                objects.Add(hit.gameObject);
+            if (hit.TryGetComponent(out ExplosionObject explosionObject))
+                objects.Add(explosionObject);
         }
 
         return objects;
     }
 
-    private void ApplyForceToObject(Vector3 explosionCenter, GameObject targetObject)
+    private void ApplyForceToObject(Vector3 explosionCenter, ExplosionObject explosionObject)
     {
-        if (!targetObject.TryGetComponent(out Rigidbody rigidbody))
+        if (!explosionObject.TryGetComponent(out Rigidbody rigidbody))
             return;
 
         Vector3 objectPosition = rigidbody.transform.position;
@@ -59,21 +53,5 @@ public class Explosion : MonoBehaviour
         float force = _explosionForce * percentage;
 
         rigidbody.AddForce(direction * force, ForceMode.Impulse);
-    }
-
-    private void ApplyExplosionToObjects(Vector3 explosionCenter, List<GameObject> objects)
-    {
-        foreach (GameObject targetObject in objects)
-        {
-            ApplyForceToObject(explosionCenter, targetObject);
-        }
-    }
-
-    private void HandleExplode(GameObject targetObject)
-    {
-        Vector3 explosionCenter = targetObject.transform.position;
-        List<GameObject> objects = FindObjectsInRadius(explosionCenter);
-        ApplyExplosionToObjects(explosionCenter, objects);
-        ObjectExploded?.Invoke(targetObject);
     }
 }

@@ -8,7 +8,7 @@ public class Raycaster : MonoBehaviour
 
     private InputReader _inputReader;
 
-    public event Action<GameObject> ObjectHit;
+    public event Action<ExplosionObject> ObjectHit;
 
     private void Awake()
     {
@@ -35,13 +35,9 @@ public class Raycaster : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
         {
-            if (hit.collider.TryGetComponent(out ExplosionData explosionData))
+            if (hit.collider.TryGetComponent(out ExplosionObject explosionObject))
             {
-                ObjectHit?.Invoke(hit.collider.gameObject);
-                Debug.Log($"Попал по взрываемому объекту");
-            }
-            else {
-                Debug.Log($"НЕ Попал по взрываемому объекту");
+                ObjectHit?.Invoke(explosionObject);
             }
         }
     }

@@ -12,7 +12,6 @@ public class InputReader : MonoBehaviour
         if (Input.GetButtonDown(PrimaryInteractionButton))
         {
             InteractionPressed?.Invoke();
-            Debug.Log($"Клик");
         }
     }
 }
