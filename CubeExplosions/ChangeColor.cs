@@ -1,23 +1,37 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Spawner))]
 public class ChangeColor : MonoBehaviour
 {
-    private Renderer _renderer;
+    private Spawner _spawner;
 
     private void Awake()
     {
-        _renderer = GetComponent<Renderer>();
+        _spawner = GetComponent<Spawner>();
     }
 
-    public void Change()
+    private void OnEnable()
     {
+        _spawner.ObjectCloned += Change;
+    }
+
+    private void OnDisable()
+    {
+        _spawner.ObjectCloned -= Change;
+    }
+
+    private void Change(GameObject targetObject)
+    {
+        if (!targetObject.TryGetComponent(out Renderer renderer))
+            return;
+
         Color randomColor = new Color(
             Random.Range(0f, 1f),
             Random.Range(0f, 1f),
             Random.Range(0f, 1f)
         );
         
-        _renderer.material.color = randomColor;
+        renderer.material.color = randomColor;
     }
 }
 

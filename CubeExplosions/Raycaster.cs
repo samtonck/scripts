@@ -1,33 +1,48 @@
 using System;
 using UnityEngine;
 
+[RequireComponent(typeof(InputReader))]
 public class Raycaster : MonoBehaviour
 {
-    public event Action<GameObject> OnObjectHit;
-
     [SerializeField] private Camera _mainCamera;
+
+    private InputReader _inputReader;
+
+    public event Action<GameObject> ObjectHit;
+
+    private void Awake()
+    {
+        _inputReader = GetComponent<InputReader>();
+    }
 
     private void OnEnable()
     {
-        var inputReader = GetComponent<InputReader>();
-        inputReader.OnLeftMouseClick += PerformRaycast;
+        _inputReader.InteractionPressed += PerformRaycast;
     }
 
     private void OnDisable()
     {
-        var inputReader = GetComponent<InputReader>();
-        inputReader.OnLeftMouseClick -= PerformRaycast;
+        _inputReader.InteractionPressed -= PerformRaycast;
     }
 
     private void PerformRaycast()
     {
-        Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
+        Camera camera = _mainCamera != null ? _mainCamera : Camera.main;
+        if (camera == null) 
+            return;
 
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity))
+        Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
         {
-            GameObject hitObject = hit.collider.gameObject;
-            OnObjectHit?.Invoke(hitObject);
+            if (hit.collider.TryGetComponent(out ExplosionData explosionData))
+            {
+                ObjectHit?.Invoke(hit.collider.gameObject);
+                Debug.Log($"Попал по взрываемому объекту");
+            }
+            else {
+                Debug.Log($"НЕ Попал по взрываемому объекту");
+            }
         }
     }
 }

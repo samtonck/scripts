@@ -1,65 +1,57 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Handler))]
 public class Explosion : MonoBehaviour
 {
     [SerializeField] private float _explosionRadius = 10f;
     [SerializeField] private float _explosionForce = 1000f;
-    [SerializeField] private float _explosionDelay = 0.1f;
+
+    private Handler _handler;
+
+    public event Action<GameObject> ObjectExploded;
+
+    private void Awake()
+    {
+        _handler = GetComponent<Handler>();
+    }
 
     private void OnEnable()
     {
-        var handler = GetComponent<Handler>();
-        handler.OnExplode += HandleExplode;
+        _handler.Exploded += HandleExplode;
     }
 
     private void OnDisable()
     {
-        var handler = GetComponent<Handler>();
-        handler.OnExplode -= HandleExplode;
+        _handler.Exploded -= HandleExplode;
     }
 
-    private void HandleExplode(GameObject cube)
+    private List<GameObject> FindObjectsInRadius(Vector3 explosionCenter)
     {
-        Vector3 explosionCenter = cube.transform.position;
-        Destroy(cube);
-        StartCoroutine(ApplyExplosionToCubes(explosionCenter, FindCubesInRadius(explosionCenter)));
-    }
-
-    public System.Collections.IEnumerator ApplyExplosionToCubes(Vector3 explosionCenter, List<GameObject> cubes)
-    {   
-        yield return new WaitForSeconds(_explosionDelay);
-        foreach (GameObject cube in cubes)
-        {
-            if (cube != null)
-            {
-                ApplyForceToCube(explosionCenter, cube);
-            }
-        }
-    }
-
-    private List<GameObject> FindCubesInRadius(Vector3 explosionCenter)
-    {
-        List<GameObject> cubes = new List<GameObject>();
+        List<GameObject> objects = new List<GameObject>();
         Collider[] colliders = Physics.OverlapSphere(explosionCenter, _explosionRadius);
 
         foreach (Collider hit in colliders)
         {
-            if (hit.GetComponent<ExplosionData>() != null)
-                cubes.Add(hit.gameObject);
+            if (hit.TryGetComponent(out ExplosionData explosionData))
+                objects.Add(hit.gameObject);
         }
 
-        return cubes;
+        return objects;
     }
 
-    private void ApplyForceToCube(Vector3 explosionCenter, GameObject cube)
+    private void ApplyForceToObject(Vector3 explosionCenter, GameObject targetObject)
     {
-        Rigidbody rigidbody = cube.GetComponent<Rigidbody>();
-        Vector3 cubePosition = rigidbody.transform.position;
-        Vector3 direction = cubePosition - explosionCenter;
+        if (!targetObject.TryGetComponent(out Rigidbody rigidbody))
+            return;
+
+        Vector3 objectPosition = rigidbody.transform.position;
+        Vector3 direction = objectPosition - explosionCenter;
         float distance = direction.magnitude;
 
-        if (distance < Mathf.Epsilon) return;
+        if (distance < Mathf.Epsilon) 
+            return;
 
         direction.Normalize();
 
@@ -67,5 +59,21 @@ public class Explosion : MonoBehaviour
         float force = _explosionForce * percentage;
 
         rigidbody.AddForce(direction * force, ForceMode.Impulse);
+    }
+
+    private void ApplyExplosionToObjects(Vector3 explosionCenter, List<GameObject> objects)
+    {
+        foreach (GameObject targetObject in objects)
+        {
+            ApplyForceToObject(explosionCenter, targetObject);
+        }
+    }
+
+    private void HandleExplode(GameObject targetObject)
+    {
+        Vector3 explosionCenter = targetObject.transform.position;
+        List<GameObject> objects = FindObjectsInRadius(explosionCenter);
+        ApplyExplosionToObjects(explosionCenter, objects);
+        ObjectExploded?.Invoke(targetObject);
     }
 }

@@ -1,21 +1,27 @@
 using System;
 using UnityEngine;
 
+[RequireComponent(typeof(Raycaster))]
 public class Handler : MonoBehaviour
 {
-    public event Action<GameObject> OnExplode;
-    public event Action<GameObject> OnDivide;
+    private Raycaster _raycaster;
+
+    public event Action<GameObject> SpawnClones;
+    public event Action<GameObject> Exploded;
+
+    private void Awake()
+    {
+        _raycaster = GetComponent<Raycaster>();
+    }
 
     private void OnEnable()
     {
-        var raycaster = GetComponent<Raycaster>();
-        raycaster.OnObjectHit += HandleClick;
+        _raycaster.ObjectHit += HandleClick;
     }
 
     private void OnDisable()
     {
-        var raycaster = GetComponent<Raycaster>();
-        raycaster.OnObjectHit -= HandleClick;
+        _raycaster.ObjectHit -= HandleClick;
     }
 
     private bool CanDivide(float currentChance)
@@ -26,18 +32,18 @@ public class Handler : MonoBehaviour
 
     private void HandleClick(GameObject hitObject)
     {
-        ExplosionData explosionData = hitObject.GetComponent<ExplosionData>();
-        if (explosionData == null) return;
+        if (!hitObject.TryGetComponent(out ExplosionData explosionData))
+            return;
 
-        if (CanDivide(explosionData.GetCurrentChance()))
+        if (CanDivide(explosionData.CurrentChance))
         {
-            OnDivide?.Invoke(hitObject);
-            Debug.Log($"Деление {explosionData.GetCurrentChance()}");
+            SpawnClones?.Invoke(hitObject);
+            Debug.Log($"Клонирование | шанс: {explosionData.CurrentChance}");
         }
         else
         {
-            OnExplode?.Invoke(hitObject);
-            Debug.Log($"Взрыв {explosionData.GetCurrentChance()}");
+            Exploded?.Invoke(hitObject);
+            Debug.Log($"Взрыв | шанс: {explosionData.CurrentChance}");
         }
     }
 }

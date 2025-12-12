@@ -3,13 +3,16 @@ using UnityEngine;
 
 public class InputReader : MonoBehaviour
 {
-    public event Action OnLeftMouseClick;
+    private const string PrimaryInteractionButton = "Fire1";
+
+    public event Action InteractionPressed;
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetButtonDown(PrimaryInteractionButton))
         {
-            OnLeftMouseClick?.Invoke();
+            InteractionPressed?.Invoke();
+            Debug.Log($"Клик");
         }
     }
 }

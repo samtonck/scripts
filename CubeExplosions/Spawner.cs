@@ -1,68 +1,63 @@
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
-[RequireComponent(typeof(Explosion))]
+[RequireComponent(typeof(Handler))]
 public class Spawner : MonoBehaviour
 {
     [SerializeField] private int _minCountClone = 2;
     [SerializeField] private int _maxCountClone = 6;
 
-    private Explosion _explosion;
+    private Handler _handler;
+
+    public event Action<GameObject> ObjectCloned;
+    public event Action<GameObject> ObjectDestroyed;
 
     private void Awake()
     {
-        _explosion = GetComponent<Explosion>();
+        _handler = GetComponent<Handler>();
     }
 
     private void OnEnable()
     {
-        var handler = GetComponent<Handler>();
-        handler.OnDivide += HandleDivide;
+        _handler.SpawnClones += HandleSpawn;
     }
 
     private void OnDisable()
     {
-        var handler = GetComponent<Handler>();
-        handler.OnDivide -= HandleDivide;
+        _handler.SpawnClones -= HandleSpawn;
     }
 
-    private void HandleDivide(GameObject originalCube)
+    private void HandleSpawn(GameObject originalObject)
     {
-        ExplosionData originalData = originalCube.GetComponent<ExplosionData>();
-        Vector3 originalPosition = originalCube.transform.position;
-        Vector3 originalScale = originalCube.transform.localScale;
-        float originalChance = originalData.GetCurrentChance();
+        if (!originalObject.TryGetComponent(out ExplosionData originalData))
+            return;
+
+        Vector3 originalPosition = originalObject.transform.position;
+        Vector3 originalScale = originalObject.transform.localScale;
+        float originalChance = originalData.CurrentChance;
         
-        Divide(originalCube, originalPosition, originalScale, originalChance);
-    }
-
-    private void Divide(GameObject originalCube, Vector3 position, Vector3 scale, float chance)
-    {
-        List<GameObject> createdCubes = CreateClones(originalCube, position, scale, chance);
-        Destroy(originalCube);
-        StartCoroutine(_explosion.ApplyExplosionToCubes(position, createdCubes));
-    }
-
-    private List<GameObject> CreateClones(GameObject originalCube, Vector3 position, Vector3 scale, float chance)
-    {
-        int cloneCount = Random.Range(_minCountClone, _maxCountClone + 1);
-        List<GameObject> createdCubes = new List<GameObject>();
+        ObjectDestroyed?.Invoke(originalObject);
+        
+        int cloneCount = UnityEngine.Random.Range(_minCountClone, _maxCountClone + 1);
 
         for (int i = 0; i < cloneCount; i++)
         {
-            GameObject cube = Instantiate(originalCube);
-            cube.transform.position = position;
-            cube.transform.rotation = Random.rotation;
-            cube.transform.localScale = scale / 2f;
-            ExplosionData explosionData = cube.GetComponent<ExplosionData>();
-            explosionData.InitializeFromParent(chance);
-            ChangeColor changeColor = cube.GetComponent<ChangeColor>();
-            changeColor.Change();
-            Rigidbody rigidbody = cube.GetComponent<Rigidbody>();
-            rigidbody.useGravity = true;
-            createdCubes.Add(cube);
+            GameObject targetObject = Instantiate(originalObject);
+            targetObject.transform.position = originalPosition;
+            targetObject.transform.rotation = UnityEngine.Random.rotation;
+            targetObject.transform.localScale = originalScale / 2f;
+            
+            if (targetObject.TryGetComponent(out ExplosionData explosionData))
+            {
+                explosionData.InitializeFromParent(originalChance);
+            }
+            
+            if (targetObject.TryGetComponent(out Rigidbody rigidbody))
+            {
+                rigidbody.useGravity = true;
+            }
+            
+            ObjectCloned?.Invoke(targetObject);
         }
-
-        return createdCubes;
     }
 }
