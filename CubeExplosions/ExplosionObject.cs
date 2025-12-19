@@ -17,7 +17,7 @@ public class ExplosionObject : MonoBehaviour
     public void Initialize(Vector3 position, Vector3 scale, float parentChance)
     {
         transform.position = position;
-        transform.rotation = UnityEngine.Random.rotation;
+        transform.rotation = Random.rotation;
         transform.localScale = scale / 2f;
         
         InitializeFromParent(parentChance);
