@@ -4,21 +4,24 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Renderer))]
-public class RainItem : MonoBehaviour
+public class Cube : MonoBehaviour
 {
     [SerializeField] private float _minLifetime = 2f;
     [SerializeField] private float _maxLifetime = 5f;
     [SerializeField] private float _minHeightBound = -10f;
 
     private Renderer _renderer;
+    private Rigidbody _rigidbody;
     private bool _hasCollidedWithPlatform;
     private Coroutine _lifetimeCoroutine;
 
-    public event Action<RainItem> LifetimeExpired;
+    public Rigidbody Rigidbody => _rigidbody;
+    public event Action<Cube> LifetimeExpired;
 
     private void Awake()
     {
         _renderer = GetComponent<Renderer>();
+        _rigidbody = GetComponent<Rigidbody>();
     }
 
     private void OnDisable()
@@ -83,4 +86,3 @@ public class RainItem : MonoBehaviour
         LifetimeExpired?.Invoke(this);
     }
 }
-
