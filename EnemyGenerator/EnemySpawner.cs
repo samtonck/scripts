@@ -22,13 +22,6 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float _positionMinZ = -5f;
     [SerializeField] private float _positionMaxZ = 5f;
 
-    [Header("Way Point Area")]
-    [SerializeField] private float _wayPointPositionMinX = -35f;
-    [SerializeField] private float _wayPointPositionMaxX = 35f;
-    [SerializeField] private float _wayPointPositionY = 0f;
-    [SerializeField] private float _wayPointPositionMinZ = -35f;
-    [SerializeField] private float _wayPointPositionMaxZ = 35f;
-
     private ObjectPool<Enemy> _pool;
     private List<Enemy> _activeEnemies = new List<Enemy>();
 
@@ -78,8 +71,8 @@ public class EnemySpawner : MonoBehaviour
         enemy.ReachedPoint += OnEnemyWayPointReached;
         _activeEnemies.Add(enemy);
 
-        Vector3 randomWayPoint = GetRandomWayPoint();
-        enemy.Initialize(randomWayPoint);
+        Vector3 randomDirection = GetRandomDirection();
+        enemy.Initialize(randomDirection);
     }
 
     private Vector3 GetRandomSpawnPosition()
@@ -89,11 +82,10 @@ public class EnemySpawner : MonoBehaviour
         return new Vector3(x, _spawnHeight, z);
     }
 
-    private Vector3 GetRandomWayPoint()
+    private Vector3 GetRandomDirection()
     {
-        float x = Random.Range(_wayPointPositionMinX, _wayPointPositionMaxX);
-        float z = Random.Range(_wayPointPositionMinZ, _wayPointPositionMaxZ);
-        return new Vector3(x, _wayPointPositionY, z);
+        float randomYRotation = Random.Range(0f, 360f);
+        return Quaternion.Euler(0, randomYRotation, 0) * Vector3.forward;
     }
 
     private void OnEnemyWayPointReached(Enemy enemy)
