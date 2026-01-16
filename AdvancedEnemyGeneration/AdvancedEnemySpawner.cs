@@ -70,6 +70,7 @@ public class AdvancedEnemySpawner : MonoBehaviour
     private void SpawnChiken()
     {
         _chiken = UnityEngine.Object.Instantiate(_enemyTargetPrefab);
+        _chiken.transform.SetParent(transform);
         _chiken.transform.position = _chikenPoints[0].transform.position;
         _chiken.Initialize(_chikenPoints);
     }
